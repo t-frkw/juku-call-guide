@@ -387,7 +387,10 @@ const NODES = {
 
   who:{
     crumb:"相手は？",
-    prompt:"電話に出ました。相手は誰ですか？",
+    lines:[
+      {who:"self", text:"お電話ありがとうございます。個別指導の○○塾○○教室、講師の○○です。"},
+    ],
+    prompt:"相手は誰ですか？",
     choices:[
       {label:"生徒", next:"b_intro"},
       {label:"在籍中の保護者", next:"c1"},
@@ -398,8 +401,7 @@ const NODES = {
   b_intro:{
     crumb:"生徒",
     lines:[
-      {who:"other", text:"あ、〇〇です。"},
-      {who:"self", text:"〇〇さん、お電話ありがとう。どうしたの？"},
+      {who:"self", text:"〇〇さん、どうしたの？"},
     ],
     note:"（用件を聞く）",
     choices:[
@@ -420,7 +422,6 @@ const NODES = {
     lines:[
       {who:"self", text:"分かりました。"},
       {who:"self", text:"気をつけて来てね。"},
-      {who:"self", text:"教室長に伝えておくので、また来られる時によろしくね。"},
       {who:"self", text:"お電話ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
@@ -439,6 +440,14 @@ const NODES = {
   },
   b2:{
     crumb:"それ以外",
+    lines:[
+      {who:"self", text:"（聞いた用件を繰り返して）〇〇ということだね。"},
+    ],
+    note:"（内容を復唱し、認識のズレがないか確認する）",
+    choices:[{label:"確認できた", next:"b2_final"}]
+  },
+  b2_final:{
+    crumb:"終了",
     lines:[
       {who:"self", text:"分かりました。教室長に伝えておくね。"},
       {who:"self", text:"お電話ありがとうございました。失礼します。"},
@@ -595,10 +604,6 @@ function render(nodeId, opts={}){
           <div class="sub">電話が鳴ったら「スタート」を押して、画面の通りに進めてください。分からなくなったら「最初から」でいつでもやり直せます。</div>
         </div>
         <button class="startbtn" id="startBtn">📞 電話に出た（スタート）</button>
-        <div class="bubble self" style="align-self:center; max-width:100%;">
-          <span class="tag">最初のひとこと</span>
-          お電話ありがとうございます。個別指導の○○塾○○教室、講師の○○です。
-        </div>
         <button class="linkbtn" id="notesListBtn">📒 過去のメモを見る（${savedCount}件）</button>
       </div>
     `;
