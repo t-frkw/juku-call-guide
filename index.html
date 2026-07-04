@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>電話対応ガイド</title>
+<style>
+  :root{
+    --bg:#EEF2ED;
+    --surface:#FFFFFF;
+    --ink:#1E2A22;
+    --ink-soft:#5C6B61;
+    --primary:#2F5D50;
+    --primary-dark:#213F37;
+    --primary-soft:#E4EEE9;
+    --other-bubble:#EFEDE7;
+    --accent:#C9A227;
+    --accent-soft:#F6EFD8;
+    --line:#DDE3DD;
+    --radius:16px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+  #app{
+    max-width:720px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding-bottom: env(safe-area-inset-bottom);
+    position:relative;
+  }
+
+  .callbar{
+    background:var(--primary);
+    color:#fff;
+    padding:14px 20px;
+    padding-top:calc(14px + env(safe-area-inset-top));
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:15px;
+    letter-spacing:.02em;
+  }
+  .callbar .left{ display:flex; align-items:center; gap:8px; }
+  .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:#7CD9A8;
+    animation:pulse 1.6s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.35; }
+  }
+  .callbar .memoToggle{
+    appearance:none; border:none;
+    background:rgba(255,255,255,.16);
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    padding:8px 14px;
+    border-radius:10px;
+  }
+  .callbar .memoToggle:active{ background:rgba(255,255,255,.3); }
+
+  .crumbs{
+    padding:10px 20px 0 20px;
+    font-size:13px;
+    color:var(--ink-soft);
+    min-height:20px;
+  }
+  .crumbs span:not(:last-child)::after{
+    content:" › ";
+    color:#B7C2BA;
+  }
+
+  main{
+    flex:1;
+    padding:16px 20px 12px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .bubble{
+    max-width:92%;
+    padding:16px 18px;
+    border-radius:var(--radius);
+    font-size:19px;
+    line-height:1.7;
+    animation:rise .25s ease-out;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .bubble.other{
+    background:var(--other-bubble);
+    color:var(--ink);
+    align-self:flex-start;
+    border-bottom-left-radius:4px;
+  }
+  .bubble.self{
+    background:var(--primary-soft);
+    color:var(--primary-dark);
+    align-self:flex-end;
+    border-bottom-right-radius:4px;
+    font-weight:600;
+  }
+  .bubble .tag{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.05em;
+    margin-bottom:6px;
+    opacity:.6;
+  }
+
+  .note{
+    align-self:center;
+    font-size:14px;
+    color:var(--ink-soft);
+    background:transparent;
+    border:1.5px dashed #C6D0C8;
+    border-radius:10px;
+    padding:8px 14px;
+    text-align:center;
+  }
+
+  .prompt{
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  button.opt{
+    appearance:none;
+    border:none;
+    width:100%;
+    min-height:64px;
+    border-radius:14px;
+    background:var(--surface);
+    color:var(--primary-dark);
+    font-size:19px;
+    font-weight:700;
+    border:2px solid var(--primary);
+    padding:12px 18px;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  button.opt:active{ background:var(--primary-soft); }
+  button.opt .arrow{ margin-left:auto; opacity:.6; }
+
+  button.finish{
+    appearance:none;
+    border:none;
+    width:100%;
+    min-height:72px;
+    border-radius:14px;
+    background:var(--accent);
+    color:#3A2E05;
+    font-size:20px;
+    font-weight:800;
+    box-shadow:0 2px 0 rgba(0,0,0,.06);
+  }
+  button.finish:active{ filter:brightness(.96); }
+
+  .endmark{
+    align-self:center;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:-4px;
+  }
+
+  footer{
+    display:flex;
+    gap:10px;
+    padding:10px 20px calc(14px + env(safe-area-inset-bottom)) 20px;
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+  }
+  footer button{
+    appearance:none;
+    border:none;
+    flex:1;
+    min-height:50px;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:700;
+  }
+  footer .back{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1.5px solid var(--line);
+  }
+  footer .home{
+    background:transparent;
+    color:var(--primary-dark);
+    border:1.5px solid var(--primary);
+  }
+  footer button:disabled{ opacity:.35; }
+
+  .hero{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    gap:18px;
+    padding:20px 10px;
+  }
+  .hero h1{
+    font-size:22px;
+    margin:0;
+    color:var(--ink);
+  }
+  .hero .sub{
+    font-size:15px;
+    color:var(--ink-soft);
+    max-width:36ch;
+    line-height:1.6;
+  }
+  .startbtn{
+    appearance:none;
+    border:none;
+    width:100%;
+    max-width:320px;
+    min-height:74px;
+    border-radius:18px;
+    background:var(--primary);
+    color:#fff;
+    font-size:21px;
+    font-weight:800;
+    letter-spacing:.03em;
+  }
+  .startbtn:active{ background:var(--primary-dark); }
+
+  .linkbtn{
+    appearance:none;
+    border:none;
+    background:transparent;
+    color:var(--primary-dark);
+    font-size:15px;
+    font-weight:700;
+    text-decoration:underline;
+    padding:8px;
+  }
+
+  .memoOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(20,30,25,.4);
+    display:none;
+    align-items:flex-end;
+    z-index:50;
+  }
+  .memoOverlay.open{ display:flex; }
+  .memoPanel{
+    background:var(--surface);
+    width:100%;
+    max-width:720px;
+    margin:0 auto;
+    border-radius:20px 20px 0 0;
+    padding:18px 20px calc(18px + env(safe-area-inset-bottom)) 20px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-height:80vh;
+  }
+  .memoPanel h3{
+    margin:0;
+    font-size:17px;
+    color:var(--ink);
+  }
+  .memoPanel textarea{
+    width:100%;
+    min-height:160px;
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:17px;
+    font-family:inherit;
+    line-height:1.6;
+    resize:vertical;
+    color:var(--ink);
+  }
+  .memoPanel textarea:focus{ outline:none; border-color:var(--primary); }
+  .memoPanel .hint{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .memoPanel .closeBtn{
+    appearance:none;
+    border:none;
+    background:var(--primary);
+    color:#fff;
+    font-size:17px;
+    font-weight:700;
+    min-height:54px;
+    border-radius:12px;
+  }
+
+  .noteCard{
+    background:var(--surface);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:14px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .noteCard .meta{
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .noteCard .body{
+    font-size:16px;
+    color:var(--ink);
+    white-space:pre-wrap;
+    line-height:1.6;
+  }
+  .noteCard .del{
+    align-self:flex-end;
+    appearance:none;
+    border:none;
+    background:transparent;
+    color:#B4402A;
+    font-size:13px;
+    font-weight:700;
+    padding:4px 6px;
+  }
+  .emptyState{
+    color:var(--ink-soft);
+    font-size:15px;
+    text-align:center;
+    padding:40px 20px;
+    line-height:1.7;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="callbar">
+    <div class="left"><span class="dot"></span><span id="callstatus">通話前</span></div>
+    <button class="memoToggle" id="memoToggleBtn" style="display:none;">📝 メモ</button>
+  </div>
+  <div class="crumbs" id="crumbs"></div>
+  <main id="main"></main>
+  <footer id="footer" style="display:none;">
+    <button class="back" id="backBtn">← 戻る</button>
+    <button class="home" id="homeBtn">🏠 最初から</button>
+  </footer>
+
+  <div class="memoOverlay" id="memoOverlay">
+    <div class="memoPanel">
+      <h3>📝 通話メモ</h3>
+      <div class="hint">名前・電話番号・都合の良い時間・用件などを自由にメモできます。内容は自動で保存されます。</div>
+      <textarea id="memoText" placeholder="例）鈴木さん（お母様）／090-xxxx-xxxx／明日15時希望"></textarea>
+      <button class="closeBtn" id="memoCloseBtn">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const NODES = {
+  home:{ home:true },
+
+  who:{
+    crumb:"相手は？",
+    prompt:"電話に出ました。相手は誰ですか？",
+    choices:[
+      {label:"生徒", next:"b_intro"},
+      {label:"在籍中の保護者", next:"c1"},
+      {label:"新規の保護者（入塾検討）", next:"d1"},
+    ]
+  },
+
+  b_intro:{
+    crumb:"生徒",
+    lines:[
+      {who:"other", text:"あ、〇〇です。"},
+      {who:"self", text:"〇〇さん、お電話ありがとう。どうしたの？"},
+    ],
+    note:"（用件を聞く）",
+    choices:[
+      {label:"遅刻・欠席の連絡だった", next:"b_late_choice"},
+      {label:"それ以外の用件だった", next:"b2"},
+    ]
+  },
+  b_late_choice:{
+    crumb:"遅刻/欠席",
+    prompt:"遅刻ですか、欠席ですか？",
+    choices:[
+      {label:"遅刻", next:"b1_late"},
+      {label:"欠席（体調不良など）", next:"b1_absent"},
+    ]
+  },
+  b1_late:{
+    crumb:"遅刻",
+    lines:[
+      {who:"self", text:"分かりました。"},
+      {who:"self", text:"気をつけて来てね。"},
+      {who:"self", text:"教室長に伝えておくので、また来られる時によろしくね。"},
+      {who:"self", text:"お電話ありがとうございました。失礼します。"},
+    ],
+    note:"（相手が切るまで待つ）",
+    end:true
+  },
+  b1_absent:{
+    crumb:"欠席",
+    lines:[
+      {who:"self", text:"分かりました。"},
+      {who:"self", text:"お大事にね。"},
+      {who:"self", text:"教室長に伝えておくので、また来られる時によろしくね。"},
+      {who:"self", text:"お電話ありがとうございました。失礼します。"},
+    ],
+    note:"（相手が切るまで待つ）",
+    end:true
+  },
+  b2:{
+    crumb:"それ以外",
+    lines:[
+      {who:"self", text:"分かりました。教室長に伝えておくね。"},
+      {who:"self", text:"お電話ありがとうございました。失礼します。"},
+    ],
+    note:"（相手が切るまで待つ）",
+    end:true
+  },
+
+  c1:{
+    crumb:"在籍保護者",
+    lines:[ {who:"self", text:"いつもお世話になっております。"} ],
+    prompt:"相手の用件は？",
+    choices:[
+      {label:"教室長がいるか聞かれた", next:"e1"},
+      {label:"用件を言われた", next:"f1"},
+    ]
+  },
+  e1:{
+    crumb:"教室長を聞かれた",
+    lines:[
+      {who:"self", text:"申し訳ございません。教室長は今、手が離せない状況でして／教室長は本日お休みをいただいておりまして、差し支えなければ、ご用件を伺ってもよろしいでしょうか？"},
+    ],
+    note:"（教室長が面談中・離席中など／お休みの場合。用件を聞く）",
+    choices:[{label:"用件を聞いた", next:"e2"}]
+  },
+  e2:{
+    crumb:"折り返し調整",
+    lines:[
+      {who:"self", text:"ありがとうございます。では、後ほど（後日）教室長からかけ直させていただきます。何時頃（何日の何時頃）なら、ご都合よろしいでしょうか？"},
+    ],
+    note:"（都合の良い時間を聞く）",
+    choices:[{label:"都合を聞いた", next:"cf_name"}]
+  },
+  f1:{
+    crumb:"用件を言われた",
+    lines:[
+      {who:"self", text:"申し訳ございません、教室長は今、手が離せない状況でして／教室長は本日お休みをいただいておりまして、後ほど（後日）教室長からかけ直させていただきます。何時頃（何日の何時頃）なら、ご都合よろしいでしょうか？"},
+    ],
+    note:"（教室長が面談中・離席中など／お休みの場合。都合の良い時間を聞く）",
+    choices:[{label:"都合を聞いた", next:"cf_name"}]
+  },
+  cf_name:{
+    crumb:"名前確認",
+    lines:[
+      {who:"self", text:"ありがとうございます。念のため、お子様のお名前を確認させていただいてもよろしいでしょうか？"},
+    ],
+    note:"（名前を聞く）",
+    choices:[{label:"名前を聞いた", next:"cf_final"}]
+  },
+  cf_final:{
+    crumb:"終了",
+    lines:[
+      {who:"self", text:"ありがとうございます。〇〇さんのお母様（お父様）ですね。頂いたご用件は『〇〇』ということで、教室長に申し伝えます。本日はお電話いただき、ありがとうございました。失礼します。"},
+    ],
+    note:"（相手が切るまで待つ）",
+    end:true
+  },
+
+  d1:{
+    crumb:"新規保護者",
+    lines:[
+      {who:"other", text:"子供の塾を探しているんですけど…"},
+      {who:"self", text:"ありがとうございます。〇〇塾〇〇教室にご興味を持っていただき、嬉しく思います。申し訳ございません、教室長は今、手が離せない状況でして／教室長は本日お休みをいただいておりまして、体験授業や料金などの詳しいご案内は教室長より改めてさせていただいております。折り返しお電話させていただいてもよろしいでしょうか？"},
+    ],
+    note:"（教室長が面談中・離席中など／お休みの場合）",
+    choices:[{label:"次へ", next:"d2"}]
+  },
+  d2:{
+    crumb:"名前・学年確認",
+    lines:[
+      {who:"self", text:"それでは念のため、お子様のお名前とご学年、こちらからおかけする際のお電話番号を伺ってもよろしいでしょうか？"},
+    ],
+    note:"（名前・学年・電話番号を聞く）",
+    choices:[{label:"聞いた", next:"d3"}]
+  },
+  d3:{
+    crumb:"都合確認",
+    lines:[
+      {who:"self", text:"何時頃、あるいは何日の何時頃がご都合よろしいでしょうか？"},
+    ],
+    note:"（都合の良い時間を聞く）",
+    choices:[{label:"聞いた", next:"d4"}]
+  },
+  d4:{
+    crumb:"終了",
+    lines:[
+      {who:"self", text:"ありがとうございます。〇〇様、その時間に教室長からお電話させていただきます。本日はお電話いただき、ありがとうございました。失礼します。"},
+    ],
+    note:"（相手が切るまで待つ）",
+    end:true
+  },
+};
+
+let historyStack = [];
+let current = "home";
+let crumbTrail = [];
+
+const mainEl = document.getElementById("main");
+const footerEl = document.getElementById("footer");
+const crumbsEl = document.getElementById("crumbs");
+const statusEl = document.getElementById("callstatus");
+const backBtn = document.getElementById("backBtn");
+const homeBtn = document.getElementById("homeBtn");
+const memoToggleBtn = document.getElementById("memoToggleBtn");
+const memoOverlay = document.getElementById("memoOverlay");
+const memoText = document.getElementById("memoText");
+const memoCloseBtn = document.getElementById("memoCloseBtn");
+
+const NOTES_KEY = "juku_call_notes_v1";
+
+function loadSavedNotes(){
+  try{ return JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); }
+  catch(e){ return []; }
+}
+function saveSavedNotes(list){
+  localStorage.setItem(NOTES_KEY, JSON.stringify(list));
+}
+function finalizeCurrentNote(){
+  const text = memoText.value.trim();
+  if(text){
+    const list = loadSavedNotes();
+    list.unshift({
+      id: Date.now(),
+      date: new Date().toISOString(),
+      path: crumbTrail.join(" > ") || "（未分類）",
+      text
+    });
+    saveSavedNotes(list);
+  }
+  memoText.value = "";
+}
+
+memoToggleBtn.onclick = ()=> memoOverlay.classList.add("open");
+memoCloseBtn.onclick = ()=> memoOverlay.classList.remove("open");
+memoOverlay.onclick = (e)=>{ if(e.target === memoOverlay) memoOverlay.classList.remove("open"); };
+
+function render(nodeId, opts={}){
+  const node = NODES[nodeId];
+  current = nodeId;
+  mainEl.innerHTML = "";
+
+  if(node.home){
+    footerEl.style.display = "none";
+    memoToggleBtn.style.display = "none";
+    crumbsEl.innerHTML = "";
+    statusEl.textContent = "通話前";
+
+    const savedCount = loadSavedNotes().length;
+
+    mainEl.innerHTML = `
+      <div class="hero">
+        <div>
+          <h1>電話対応ガイド</h1>
+          <div class="sub">電話が鳴ったら「スタート」を押して、画面の通りに進めてください。分からなくなったら「最初から」でいつでもやり直せます。</div>
+        </div>
+        <button class="startbtn" id="startBtn">📞 電話に出た（スタート）</button>
+        <div class="bubble self" style="align-self:center; max-width:100%;">
+          <span class="tag">最初のひとこと</span>
+          お電話ありがとうございます。個別指導の○○塾○○教室、講師の○○です。
+        </div>
+        <button class="linkbtn" id="notesListBtn">📒 過去のメモを見る（${savedCount}件）</button>
+      </div>
+    `;
+    document.getElementById("startBtn").onclick = ()=>{
+      historyStack = [];
+      crumbTrail = [];
+      memoText.value = "";
+      go("who", true);
+    };
+    document.getElementById("notesListBtn").onclick = renderNotesList;
+    return;
+  }
+
+  footerEl.style.display = "flex";
+  memoToggleBtn.style.display = "inline-block";
+  statusEl.textContent = "通話対応中";
+  backBtn.disabled = historyStack.length === 0;
+  backBtn.onclick = goBack;
+  homeBtn.style.display = "";
+
+  if(opts.pushCrumb && node.crumb){
+    crumbTrail.push(node.crumb);
+  }
+  crumbsEl.innerHTML = crumbTrail.map(c=>`<span>${c}</span>`).join("");
+
+  (node.lines||[]).forEach(l=>{
+    const div = document.createElement("div");
+    div.className = "bubble " + (l.who === "self" ? "self" : "other");
+    div.innerHTML = `<span class="tag">${l.who === "self" ? "自分（講師）が話す" : "相手が話す"}</span>${l.text}`;
+    mainEl.appendChild(div);
+  });
+
+  if(node.note){
+    const n = document.createElement("div");
+    n.className = "note";
+    n.textContent = node.note;
+    mainEl.appendChild(n);
+  }
+
+  if(node.prompt){
+    const p = document.createElement("div");
+    p.className = "prompt";
+    p.textContent = node.prompt;
+    mainEl.appendChild(p);
+  }
+
+  if(node.choices){
+    const wrap = document.createElement("div");
+    wrap.className = "choices";
+    node.choices.forEach(c=>{
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.innerHTML = `${c.label}<span class="arrow">›</span>`;
+      b.onclick = ()=> go(c.next, true);
+      wrap.appendChild(b);
+    });
+    mainEl.appendChild(wrap);
+  }
+
+  if(node.end){
+    statusEl.textContent = "対応完了";
+    const endLabel = document.createElement("div");
+    endLabel.className = "endmark";
+    endLabel.textContent = "── 対応終了 ──";
+    mainEl.appendChild(endLabel);
+    const fin = document.createElement("button");
+    fin.className = "finish";
+    fin.textContent = "✅ メモを保存して最初の画面に戻る";
+    fin.onclick = ()=>{
+      finalizeCurrentNote();
+      goHome();
+    };
+    mainEl.appendChild(fin);
+  }
+}
+
+function go(nodeId, pushHistory){
+  if(pushHistory){ historyStack.push(current); }
+  render(nodeId, {pushCrumb:true});
+}
+function goBack(){
+  if(historyStack.length === 0) return;
+  const prev = historyStack.pop();
+  if(crumbTrail.length) crumbTrail.pop();
+  render(prev, {});
+}
+function goHome(){
+  historyStack = [];
+  crumbTrail = [];
+  render("home", {});
+}
+homeBtn.onclick = ()=>{
+  finalizeCurrentNote();
+  goHome();
+};
+
+function renderNotesList(){
+  footerEl.style.display = "flex";
+  memoToggleBtn.style.display = "none";
+  statusEl.textContent = "メモ一覧";
+  crumbsEl.innerHTML = "";
+  backBtn.disabled = false;
+  backBtn.onclick = ()=>{ render("home", {}); };
+  homeBtn.style.display = "none";
+
+  const list = loadSavedNotes();
+  mainEl.innerHTML = "";
+
+  if(list.length === 0){
+    mainEl.innerHTML = `<div class="emptyState">まだ保存されたメモはありません。<br>通話対応が終わると、ここに記録が残ります。</div>`;
+    return;
+  }
+
+  list.forEach(item=>{
+    const d = new Date(item.date);
+    const dateLabel = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    const card = document.createElement("div");
+    card.className = "noteCard";
+    card.innerHTML = `
+      <div class="meta"><span>${dateLabel}</span><span>${item.path}</span></div>
+      <div class="body"></div>
+      <button class="del">🗑 削除</button>
+    `;
+    card.querySelector(".body").textContent = item.text;
+    card.querySelector(".del").onclick = ()=>{
+      const filtered = loadSavedNotes().filter(n=>n.id !== item.id);
+      saveSavedNotes(filtered);
+      renderNotesList();
+    };
+    mainEl.appendChild(card);
+  });
+}
+
+render("home", {});
+</script>
+</body>
+</html>
