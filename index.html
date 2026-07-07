@@ -450,7 +450,7 @@ const NODES = {
   who:{
     crumb:"相手は？",
     lines:[
-      {who:"self", text:"お電話ありがとうございます。個別指導の○○塾○教室、講師の○○です。"},
+      {who:"self", text:"お電話ありがとうございます。個別指導の明光義塾桂教室、講師の○○です。"},
     ],
     prompt:"相手は誰ですか？",
     choices:[
@@ -655,14 +655,14 @@ const NODES = {
   d1_busy:{
     crumb:"出勤（取込中）",
     lines:[
-      {who:"self", text:"ありがとうございます。○○塾○教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は今、手が離せない状況でして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後ほど、折り返しお電話させていただいてもよろしいでしょうか？"},
+      {who:"self", text:"ありがとうございます。明光義塾桂教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は今、手が離せない状況でして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後ほど、折り返しお電話させていただいてもよろしいでしょうか？"},
     ],
     choices:[{label:"次へ", next:"d2_busy"}]
   },
   d1_off:{
     crumb:"休み",
     lines:[
-      {who:"self", text:"ありがとうございます。○○塾○教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は本日お休みをいただいておりまして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後日、折り返しお電話させていただいてもよろしいでしょうか？"},
+      {who:"self", text:"ありがとうございます。明光義塾桂教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は本日お休みをいただいておりまして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後日、折り返しお電話させていただいてもよろしいでしょうか？"},
     ],
     choices:[{label:"次へ", next:"d2_off"}]
   },
@@ -952,11 +952,11 @@ function renderLogin(){
     <div class="hero">
       <div>
         <h1>🔒 メモ閲覧にはログインが必要です</h1>
-        <div class="sub">スタッフ共通のパスワードを入力してください。</div>
+        <div class="sub">パスワードを入力してください。</div>
       </div>
       <div class="loginBox">
         <input type="password" id="loginPass" placeholder="パスワード" autocomplete="current-password">
-        <div class="hint">ヒント: ○○○○○</div>
+        <div class="hint">ヒント: 教室長の誕生日8桁</div>
         <div class="loginError" id="loginError" style="display:none;"></div>
         <button class="startbtn" id="loginBtn">ログイン</button>
       </div>
