@@ -912,10 +912,9 @@ function renderLogin(){
     <div class="hero">
       <div>
         <h1>🔒 メモ閲覧にはログインが必要です</h1>
-        <div class="sub">スタッフ共通のログイン情報を入力してください。</div>
+        <div class="sub">スタッフ共通のパスワードを入力してください。</div>
       </div>
       <div class="loginBox">
-        <input type="email" id="loginEmail" placeholder="メールアドレス" autocomplete="username">
         <input type="password" id="loginPass" placeholder="パスワード" autocomplete="current-password">
         <div class="hint">ヒント: ○○○○○</div>
         <div class="loginError" id="loginError" style="display:none;"></div>
@@ -924,8 +923,9 @@ function renderLogin(){
     </div>
   `;
 
+  const STAFF_EMAIL = "staff@juku-call-guide.local";
+
   const doLogin = async ()=>{
-    const email = document.getElementById("loginEmail").value.trim();
     const pass = document.getElementById("loginPass").value;
     const btn = document.getElementById("loginBtn");
     const err = document.getElementById("loginError");
@@ -933,12 +933,12 @@ function renderLogin(){
     btn.disabled = true;
     btn.textContent = "ログイン中…";
     try{
-      await auth.signInWithEmailAndPassword(email, pass);
+      await auth.signInWithEmailAndPassword(STAFF_EMAIL, pass);
       renderNotesList();
     }catch(e){
       btn.disabled = false;
       btn.textContent = "ログイン";
-      err.textContent = "ログインできませんでした。メールアドレスとパスワードをご確認ください。";
+      err.textContent = "ログインできませんでした。パスワードをご確認ください。";
       err.style.display = "block";
     }
   };
