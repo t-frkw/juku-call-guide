@@ -442,6 +442,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
 
 const NODES = {
   home:{ home:true },
@@ -999,7 +1000,10 @@ async function renderNotesList(){
   statusEl.textContent = "メモ一覧";
   crumbsEl.innerHTML = "";
   backBtn.disabled = false;
-  backBtn.onclick = ()=>{ render("home", {}); };
+  backBtn.onclick = async ()=>{
+    try{ await auth.signOut(); }catch(e){}
+    render("home", {});
+  };
   homeBtn.style.display = "none";
 
   mainEl.innerHTML = `<div class="emptyState">読み込み中…</div>`;
