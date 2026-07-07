@@ -855,7 +855,7 @@ function render(nodeId, opts={}){
     if(node.reportNote){
       const rn = document.createElement("div");
       rn.className = "reportNote";
-      rn.textContent = "📌 この内容を教室長への伝言メモとして紙に書き写してください。書き写し終えたら、メモ一覧からこの内容を削除してください。";
+      rn.textContent = "📌 この内容を教室長への伝言として紙に書いてください。書き終えたら、メモ一覧からこの内容を削除してください。";
       mainEl.appendChild(rn);
     }
 
@@ -1021,7 +1021,7 @@ async function renderNotesList(){
 
   const banner = document.createElement("div");
   banner.className = "reportNote";
-  banner.textContent = "📌 教室長への伝言メモを紙に書き写したら、このメモは削除してください。";
+  banner.textContent = "📌 教室長への伝言を紙に書いたら、このメモは削除してください。";
   mainEl.appendChild(banner);
 
   if(notes.length === 0){
