@@ -899,6 +899,31 @@ function requireLoginThenShowNotes(){
   }
 }
 
+const LOGIN_ATTEMPTS_KEY = "juku_login_attempts";
+const LOGIN_LOCK_KEY = "juku_login_lock_until";
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000; // 15分
+
+function getLoginAttempts(){
+  return parseInt(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || "0", 10);
+}
+function incrementLoginAttempts(){
+  const n = getLoginAttempts() + 1;
+  localStorage.setItem(LOGIN_ATTEMPTS_KEY, String(n));
+  if(n >= MAX_LOGIN_ATTEMPTS){
+    localStorage.setItem(LOGIN_LOCK_KEY, String(Date.now() + LOGIN_LOCK_DURATION_MS));
+  }
+  return n;
+}
+function clearLoginAttempts(){
+  localStorage.removeItem(LOGIN_ATTEMPTS_KEY);
+  localStorage.removeItem(LOGIN_LOCK_KEY);
+}
+function getLoginLockRemainingMs(){
+  const until = parseInt(localStorage.getItem(LOGIN_LOCK_KEY) || "0", 10);
+  return until - Date.now();
+}
+
 function renderLogin(){
   footerEl.style.display = "flex";
   memoToggleBtn.style.display = "none";
@@ -907,6 +932,20 @@ function renderLogin(){
   backBtn.disabled = false;
   backBtn.onclick = ()=>{ render("home", {}); };
   homeBtn.style.display = "none";
+
+  const remainingMs = getLoginLockRemainingMs();
+  if(remainingMs > 0){
+    const remainMin = Math.ceil(remainingMs / 60000);
+    mainEl.innerHTML = `
+      <div class="hero">
+        <div>
+          <h1>🔒 一時的にロックされています</h1>
+          <div class="sub">パスワードを5回連続で間違えたため、閲覧が制限されています。<br>あと約${remainMin}分後に再度お試しいただけます。</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   mainEl.innerHTML = `
     <div class="hero">
@@ -934,11 +973,17 @@ function renderLogin(){
     btn.textContent = "ログイン中…";
     try{
       await auth.signInWithEmailAndPassword(STAFF_EMAIL, pass);
+      clearLoginAttempts();
       renderNotesList();
     }catch(e){
+      const n = incrementLoginAttempts();
       btn.disabled = false;
       btn.textContent = "ログイン";
-      err.textContent = "ログインできませんでした。パスワードをご確認ください。";
+      if(n >= MAX_LOGIN_ATTEMPTS){
+        renderLogin();
+        return;
+      }
+      err.textContent = `ログインできませんでした。パスワードをご確認ください。（あと${MAX_LOGIN_ATTEMPTS - n}回間違えるとロックされます）`;
       err.style.display = "block";
     }
   };
