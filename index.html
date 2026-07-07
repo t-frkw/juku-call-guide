@@ -8,6 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <title>電話対応ガイド</title>
 <style>
   :root{
@@ -358,6 +361,50 @@
     padding:40px 20px;
     line-height:1.7;
   }
+
+  .loginBox{
+    width:100%;
+    max-width:320px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .loginBox input{
+    width:100%;
+    min-height:54px;
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:0 14px;
+    font-size:17px;
+    font-family:inherit;
+    color:var(--ink);
+    background:var(--surface);
+  }
+  .loginBox input:focus{ outline:none; border-color:var(--primary); }
+  .loginBox .hint{
+    font-size:12px;
+    color:#AEB8B1;
+    text-align:left;
+    padding-left:4px;
+  }
+  .loginBox .loginError{
+    font-size:13px;
+    color:#B4402A;
+    text-align:left;
+    padding-left:4px;
+  }
+
+  .reportNote{
+    align-self:center;
+    font-size:14px;
+    color:#6B5710;
+    background:var(--accent-soft);
+    border:1.5px solid var(--accent);
+    border-radius:10px;
+    padding:10px 14px;
+    text-align:center;
+    line-height:1.6;
+  }
 </style>
 </head>
 <body>
@@ -384,13 +431,25 @@
 </div>
 
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCUKXPAau7C38PfkZjq8mnoZG-SQg_jX0Q",
+  authDomain: "juku-call-guide.firebaseapp.com",
+  projectId: "juku-call-guide",
+  storageBucket: "juku-call-guide.firebasestorage.app",
+  messagingSenderId: "663856419832",
+  appId: "1:663856419832:web:2a7b857b8f2f107a4b3c0d"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 const NODES = {
   home:{ home:true },
 
   who:{
     crumb:"相手は？",
     lines:[
-      {who:"self", text:"お電話ありがとうございます。個別指導の明光義塾桂教室、講師の○○です。"},
+      {who:"self", text:"お電話ありがとうございます。個別指導の○○塾○教室、講師の○○です。"},
     ],
     prompt:"相手は誰ですか？",
     choices:[
@@ -438,7 +497,8 @@ const NODES = {
       {who:"self", text:"お電話ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
   b2:{
     crumb:"それ以外",
@@ -455,7 +515,8 @@ const NODES = {
       {who:"self", text:"お電話ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
 
   c1:{
@@ -526,7 +587,8 @@ const NODES = {
       {who:"self", text:"本日はお電話いただき、ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
   f_absent:{
     crumb:"欠席",
@@ -536,7 +598,8 @@ const NODES = {
       {who:"self", text:"本日はお電話いただき、ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
   f_avail_choice:{
     crumb:"教室長は今？",
@@ -576,7 +639,8 @@ const NODES = {
       {who:"self", text:"ありがとうございます。〇〇さんのお母様（お父様）ですね。頂いたご用件は『〇〇』ということで、教室長に申し伝えます。本日はお電話いただき、ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
 
   d1:{
@@ -590,14 +654,14 @@ const NODES = {
   d1_busy:{
     crumb:"出勤（取込中）",
     lines:[
-      {who:"self", text:"ありがとうございます。明光義塾桂教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は今、手が離せない状況でして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後ほど、折り返しお電話させていただいてもよろしいでしょうか？"},
+      {who:"self", text:"ありがとうございます。○○塾○教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は今、手が離せない状況でして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後ほど、折り返しお電話させていただいてもよろしいでしょうか？"},
     ],
     choices:[{label:"次へ", next:"d2_busy"}]
   },
   d1_off:{
     crumb:"休み",
     lines:[
-      {who:"self", text:"ありがとうございます。明光義塾桂教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は本日お休みをいただいておりまして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後日、折り返しお電話させていただいてもよろしいでしょうか？"},
+      {who:"self", text:"ありがとうございます。○○塾○教室にご興味を持っていただき、ありがとうございます。申し訳ございません、教室長は本日お休みをいただいておりまして、体験授業や面談などの詳しいご案内は教室長より改めてさせていただいております。後日、折り返しお電話させていただいてもよろしいでしょうか？"},
     ],
     choices:[{label:"次へ", next:"d2_off"}]
   },
@@ -639,7 +703,8 @@ const NODES = {
       {who:"self", text:"ありがとうございます。〇〇様、その時間に教室長からお電話させていただきます。本日はお電話いただき、ありがとうございました。失礼します。"},
     ],
     note:"（相手が切るまで待つ）",
-    end:true
+    end:true,
+    reportNote:true
   },
 };
 
@@ -658,26 +723,42 @@ const memoOverlay = document.getElementById("memoOverlay");
 const memoText = document.getElementById("memoText");
 const memoCloseBtn = document.getElementById("memoCloseBtn");
 
-const NOTES_KEY = "juku_call_notes_v1";
+const NOTES_COLLECTION = "callNotes";
 
-function loadSavedNotes(){
-  try{ return JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); }
-  catch(e){ return []; }
+async function saveNoteToCloud(note){
+  await db.collection(NOTES_COLLECTION).add({
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    path: note.path,
+    text: note.text
+  });
 }
-function saveSavedNotes(list){
-  localStorage.setItem(NOTES_KEY, JSON.stringify(list));
+async function fetchNotesFromCloud(){
+  const snap = await db.collection(NOTES_COLLECTION).orderBy("createdAt", "desc").limit(200).get();
+  return snap.docs.map(doc => {
+    const d = doc.data();
+    return {
+      id: doc.id,
+      date: d.createdAt ? d.createdAt.toDate() : new Date(),
+      path: d.path || "（未分類）",
+      text: d.text || ""
+    };
+  });
 }
-function finalizeCurrentNote(){
+async function deleteNoteFromCloud(id){
+  await db.collection(NOTES_COLLECTION).doc(id).delete();
+}
+async function finalizeCurrentNote(){
   const text = memoText.value.trim();
   if(text){
-    const list = loadSavedNotes();
-    list.unshift({
-      id: Date.now(),
-      date: new Date().toISOString(),
-      path: crumbTrail.join(" > ") || "（未分類）",
-      text
-    });
-    saveSavedNotes(list);
+    try{
+      await saveNoteToCloud({
+        path: crumbTrail.join(" > ") || "（未分類）",
+        text
+      });
+    }catch(e){
+      console.error(e);
+      alert("メモの保存に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
+    }
   }
   memoText.value = "";
 }
@@ -697,8 +778,6 @@ function render(nodeId, opts={}){
     crumbsEl.innerHTML = "";
     statusEl.textContent = "通話前";
 
-    const savedCount = loadSavedNotes().length;
-
     mainEl.innerHTML = `
       <div class="hero">
         <div>
@@ -706,7 +785,7 @@ function render(nodeId, opts={}){
           <div class="sub">電話が鳴ったら「スタート」を押して、画面の通りに進めてください。分からなくなったら「最初から」でいつでもやり直せます。</div>
         </div>
         <button class="startbtn" id="startBtn">📞 電話に出た（スタート）</button>
-        <button class="linkbtn" id="notesListBtn">📒 過去のメモを見る（${savedCount}件）</button>
+        <button class="linkbtn" id="notesListBtn">📒 過去のメモを見る</button>
       </div>
     `;
     document.getElementById("startBtn").onclick = ()=>{
@@ -715,7 +794,7 @@ function render(nodeId, opts={}){
       memoText.value = "";
       go("who", true);
     };
-    document.getElementById("notesListBtn").onclick = renderNotesList;
+    document.getElementById("notesListBtn").onclick = requireLoginThenShowNotes;
     return;
   }
 
@@ -771,11 +850,21 @@ function render(nodeId, opts={}){
     endLabel.className = "endmark";
     endLabel.textContent = "── 対応終了 ──";
     mainEl.appendChild(endLabel);
+
+    if(node.reportNote){
+      const rn = document.createElement("div");
+      rn.className = "reportNote";
+      rn.textContent = "📌 この内容を教室長への伝言メモとして紙に書き写してください。書き写し終えたら、メモ一覧からこの内容を削除してください。";
+      mainEl.appendChild(rn);
+    }
+
     const fin = document.createElement("button");
     fin.className = "finish";
     fin.textContent = "✅ メモを保存して最初の画面に戻る";
-    fin.onclick = ()=>{
-      finalizeCurrentNote();
+    fin.onclick = async ()=>{
+      fin.disabled = true;
+      fin.textContent = "保存中…";
+      await finalizeCurrentNote();
       goHome();
     };
     mainEl.appendChild(fin);
@@ -797,12 +886,69 @@ function goHome(){
   crumbTrail = [];
   render("home", {});
 }
-homeBtn.onclick = ()=>{
-  finalizeCurrentNote();
+homeBtn.onclick = async ()=>{
+  await finalizeCurrentNote();
   goHome();
 };
 
-function renderNotesList(){
+function requireLoginThenShowNotes(){
+  if(auth.currentUser){
+    renderNotesList();
+  }else{
+    renderLogin();
+  }
+}
+
+function renderLogin(){
+  footerEl.style.display = "flex";
+  memoToggleBtn.style.display = "none";
+  statusEl.textContent = "ログイン";
+  crumbsEl.innerHTML = "";
+  backBtn.disabled = false;
+  backBtn.onclick = ()=>{ render("home", {}); };
+  homeBtn.style.display = "none";
+
+  mainEl.innerHTML = `
+    <div class="hero">
+      <div>
+        <h1>🔒 メモ閲覧にはログインが必要です</h1>
+        <div class="sub">スタッフ共通のログイン情報を入力してください。</div>
+      </div>
+      <div class="loginBox">
+        <input type="email" id="loginEmail" placeholder="メールアドレス" autocomplete="username">
+        <input type="password" id="loginPass" placeholder="パスワード" autocomplete="current-password">
+        <div class="hint">ヒント: ○○○○○</div>
+        <div class="loginError" id="loginError" style="display:none;"></div>
+        <button class="startbtn" id="loginBtn">ログイン</button>
+      </div>
+    </div>
+  `;
+
+  const doLogin = async ()=>{
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass = document.getElementById("loginPass").value;
+    const btn = document.getElementById("loginBtn");
+    const err = document.getElementById("loginError");
+    err.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "ログイン中…";
+    try{
+      await auth.signInWithEmailAndPassword(email, pass);
+      renderNotesList();
+    }catch(e){
+      btn.disabled = false;
+      btn.textContent = "ログイン";
+      err.textContent = "ログインできませんでした。メールアドレスとパスワードをご確認ください。";
+      err.style.display = "block";
+    }
+  };
+  document.getElementById("loginBtn").onclick = doLogin;
+  document.getElementById("loginPass").addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") doLogin();
+  });
+}
+
+async function renderNotesList(){
   footerEl.style.display = "flex";
   memoToggleBtn.style.display = "none";
   statusEl.textContent = "メモ一覧";
@@ -811,16 +957,34 @@ function renderNotesList(){
   backBtn.onclick = ()=>{ render("home", {}); };
   homeBtn.style.display = "none";
 
-  const list = loadSavedNotes();
-  mainEl.innerHTML = "";
+  mainEl.innerHTML = `<div class="emptyState">読み込み中…</div>`;
 
-  if(list.length === 0){
-    mainEl.innerHTML = `<div class="emptyState">まだ保存されたメモはありません。<br>通話対応が終わると、ここに記録が残ります。</div>`;
+  let notes = [];
+  try{
+    notes = await fetchNotesFromCloud();
+  }catch(e){
+    console.error(e);
+    mainEl.innerHTML = `<div class="emptyState">読み込みに失敗しました。通信環境をご確認のうえ、もう一度お試しください。</div>`;
     return;
   }
 
-  list.forEach(item=>{
-    const d = new Date(item.date);
+  mainEl.innerHTML = "";
+
+  const banner = document.createElement("div");
+  banner.className = "reportNote";
+  banner.textContent = "📌 教室長への伝言メモを紙に書き写したら、このメモは削除してください。";
+  mainEl.appendChild(banner);
+
+  if(notes.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "emptyState";
+    empty.innerHTML = "まだ保存されたメモはありません。<br>通話対応が終わると、ここに記録が残ります。";
+    mainEl.appendChild(empty);
+    return;
+  }
+
+  notes.forEach(item=>{
+    const d = item.date;
     const dateLabel = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
     const card = document.createElement("div");
     card.className = "noteCard";
@@ -830,10 +994,19 @@ function renderNotesList(){
       <button class="del">🗑 削除</button>
     `;
     card.querySelector(".body").textContent = item.text;
-    card.querySelector(".del").onclick = ()=>{
-      const filtered = loadSavedNotes().filter(n=>n.id !== item.id);
-      saveSavedNotes(filtered);
-      renderNotesList();
+    card.querySelector(".del").onclick = async ()=>{
+      const delBtn = card.querySelector(".del");
+      delBtn.disabled = true;
+      delBtn.textContent = "削除中…";
+      try{
+        await deleteNoteFromCloud(item.id);
+        renderNotesList();
+      }catch(e){
+        console.error(e);
+        alert("削除に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
+        delBtn.disabled = false;
+        delBtn.textContent = "🗑 削除";
+      }
     };
     mainEl.appendChild(card);
   });
