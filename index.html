@@ -1000,10 +1000,7 @@ async function renderNotesList(){
   statusEl.textContent = "メモ一覧";
   crumbsEl.innerHTML = "";
   backBtn.disabled = false;
-  backBtn.onclick = async ()=>{
-    try{ await auth.signOut(); }catch(e){}
-    render("home", {});
-  };
+  backBtn.onclick = ()=>{ render("home", {}); };
   homeBtn.style.display = "none";
 
   mainEl.innerHTML = `<div class="emptyState">読み込み中…</div>`;
